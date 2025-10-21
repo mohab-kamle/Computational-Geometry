@@ -116,127 +116,22 @@ class ConvexHullView:
 
     # ... (show_main_app, show_start_screen, grid_to_canvas, canvas_to_grid are unchanged) ...
     def show_main_app(self):
-        """
-        Transitions from the start screen to the main application view.
-        
-        This function does the following:
-        1. Hides the start/welcome screen
-        2. Displays the main application frame with visualization canvas
-        3. Calculates canvas dimensions after it's displayed
-        4. Determines the center point (origin) of the canvas for coordinate system
-        5. Initializes the canvas with an empty visualization
-        
-        This is called when the user clicks "Proceed" on the start screen.
-        """
-        
-        # TODO: Complete the show_main_app function
-        #
-        # Steps to implement:
-        # 1. Hide the start screen:
-        #    - Use self.start_frame.pack_forget()
-        #
-        # 2. Display the main app frame:
-        #    - Use self.main_app_frame.pack() with fill=tk.BOTH, expand=True, padx=32, pady=24
-        #
-        # 3. Update the window:
-        #    - Use self.root.update_idletasks() to ensure widgets are rendered
-        #
-        # 4. Get canvas dimensions:
-        #    - Store canvas width in self.canvas_width using self.canvas.winfo_width()
-        #    - Store canvas height in self.canvas_height using self.canvas.winfo_height()
-        #
-        # 5. Calculate the center point (origin):
-        #    - self.origin_x should be half of canvas_width
-        #    - self.origin_y should be half of canvas_height
-        #
-        # 6. Draw initial empty visualization:
-        #    - Call self.draw_all(points=[], hull=[])
-        #
-        # HINT: pack_forget() hides a widget, pack() shows it
-        # HINT: The origin is at the center of the canvas for coordinate calculations
-        
-        # Write your code here:
-
-
+        self.start_frame.pack_forget()
+        self.main_app_frame.pack(fill=tk.BOTH, expand=True, padx=32, pady=24)
+        self.root.update_idletasks()
+        self.canvas_width = self.canvas.winfo_width()
+        self.canvas_height = self.canvas.winfo_height()
+        self.origin_x = self.canvas_width / 2
+        self.origin_y = self.canvas_height / 2
+        self.draw_all(points=[], hull=[])
     def show_start_screen(self):
-        """
-        Transitions from the main app view back to the start screen.
-        
-        This function does the following:
-        1. Hides the main application frame
-        2. Displays the welcome/start screen again
-        
-        This allows users to return to the initial screen if needed.
-        """
-        
-        # TODO: Complete the show_start_screen function
-        #
-        # Steps to implement:
-        # 1. Hide the main app frame:
-        #    - Use self.main_app_frame.pack_forget()
-        #
-        # 2. Display the start screen:
-        #    - Use self.start_frame.pack() with fill=tk.BOTH, expand=True
-        #
-        # HINT: This is the opposite of show_main_app()
-        
-        # Write your code here:
-
-
+        self.main_app_frame.pack_forget()
+        self.start_frame.pack(fill=tk.BOTH, expand=True)
     def grid_to_canvas(self, grid_x, grid_y):
-        """
-        Converts mathematical grid coordinates to canvas pixel coordinates.
-        
-        This function transforms from a centered coordinate system (where origin is at canvas center)
-        to pixel coordinates (where origin is at canvas top-left). This allows mathematical points
-        to be displayed correctly on the visual canvas.
-        """
-        
-        # TODO: Complete the grid_to_canvas function
-        #
-        # Steps to implement:
-        # 1. Calculate canvas X coordinate:
-        #    - Start with self.origin_x
-        #    - Add (grid_x * self.grid_size)
-        #
-        # 2. Calculate canvas Y coordinate:
-        #    - Start with self.origin_y
-        #    - Subtract (grid_y * self.grid_size)
-        #    - NOTE: We subtract because canvas Y increases downward, but grid Y increases upward
-        #
-        # 3. Return both coordinates as a tuple
-        #
-        # HINT: Formula is: (origin_x + grid_x * size, origin_y - grid_y * size)
-        # HINT: The origin is the center point of the canvas
-        
-        # Write your code here:
-
-
+        return self.origin_x + grid_x * self.grid_size, self.origin_y - grid_y * self.grid_size
     def canvas_to_grid(self, cx, cy):
-        """
-        Converts canvas pixel coordinates back to mathematical grid coordinates.
-        
-        This function performs the inverse transformation of grid_to_canvas(), allowing
-        the system to interpret mouse clicks and canvas positions as mathematical coordinates.
-        """
-        
-        # TODO: Complete the canvas_to_grid function
-        #
-        # Steps to implement:
-        # 1. Calculate grid X coordinate:
-        #    - Subtract self.origin_x from canvas X (cx)
-        #    - Divide by self.grid_size
-        #
-        # 2. Calculate grid Y coordinate:
-        #    - Subtract canvas Y (cy) from self.origin_y (reverse of grid_to_canvas)
-        #    - Divide by self.grid_size
-        #
-        # 3. Return both coordinates as a tuple
-        #
-        # HINT: Formula is: ((cx - origin_x) / size, (origin_y - cy) / size)
-        # HINT: This is the inverse operation of grid_to_canvas()
-        
-        # Write your code here:
+        return (cx - self.origin_x) / self.grid_size, (self.origin_y - cy) / self.grid_size
+
 
     # --- Drawing Methods ---
     
