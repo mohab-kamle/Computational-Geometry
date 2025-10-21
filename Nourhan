@@ -14,3 +14,5 @@ Function 2: _update_button_text()
     Prevents image garbage collection
 
 These functions work together to create and update interactive buttons! 🎨
+
+Start in code file (view.py) line 510
