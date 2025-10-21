@@ -116,21 +116,127 @@ class ConvexHullView:
 
     # ... (show_main_app, show_start_screen, grid_to_canvas, canvas_to_grid are unchanged) ...
     def show_main_app(self):
-        self.start_frame.pack_forget()
-        self.main_app_frame.pack(fill=tk.BOTH, expand=True, padx=32, pady=24)
-        self.root.update_idletasks()
-        self.canvas_width = self.canvas.winfo_width()
-        self.canvas_height = self.canvas.winfo_height()
-        self.origin_x = self.canvas_width / 2
-        self.origin_y = self.canvas_height / 2
-        self.draw_all(points=[], hull=[])
+        """
+        Transitions from the start screen to the main application view.
+        
+        This function does the following:
+        1. Hides the start/welcome screen
+        2. Displays the main application frame with visualization canvas
+        3. Calculates canvas dimensions after it's displayed
+        4. Determines the center point (origin) of the canvas for coordinate system
+        5. Initializes the canvas with an empty visualization
+        
+        This is called when the user clicks "Proceed" on the start screen.
+        """
+        
+        # TODO: Complete the show_main_app function
+        #
+        # Steps to implement:
+        # 1. Hide the start screen:
+        #    - Use self.start_frame.pack_forget()
+        #
+        # 2. Display the main app frame:
+        #    - Use self.main_app_frame.pack() with fill=tk.BOTH, expand=True, padx=32, pady=24
+        #
+        # 3. Update the window:
+        #    - Use self.root.update_idletasks() to ensure widgets are rendered
+        #
+        # 4. Get canvas dimensions:
+        #    - Store canvas width in self.canvas_width using self.canvas.winfo_width()
+        #    - Store canvas height in self.canvas_height using self.canvas.winfo_height()
+        #
+        # 5. Calculate the center point (origin):
+        #    - self.origin_x should be half of canvas_width
+        #    - self.origin_y should be half of canvas_height
+        #
+        # 6. Draw initial empty visualization:
+        #    - Call self.draw_all(points=[], hull=[])
+        #
+        # HINT: pack_forget() hides a widget, pack() shows it
+        # HINT: The origin is at the center of the canvas for coordinate calculations
+        
+        # Write your code here:
+
+
     def show_start_screen(self):
-        self.main_app_frame.pack_forget()
-        self.start_frame.pack(fill=tk.BOTH, expand=True)
+        """
+        Transitions from the main app view back to the start screen.
+        
+        This function does the following:
+        1. Hides the main application frame
+        2. Displays the welcome/start screen again
+        
+        This allows users to return to the initial screen if needed.
+        """
+        
+        # TODO: Complete the show_start_screen function
+        #
+        # Steps to implement:
+        # 1. Hide the main app frame:
+        #    - Use self.main_app_frame.pack_forget()
+        #
+        # 2. Display the start screen:
+        #    - Use self.start_frame.pack() with fill=tk.BOTH, expand=True
+        #
+        # HINT: This is the opposite of show_main_app()
+        
+        # Write your code here:
+
+
     def grid_to_canvas(self, grid_x, grid_y):
-        return self.origin_x + grid_x * self.grid_size, self.origin_y - grid_y * self.grid_size
+        """
+        Converts mathematical grid coordinates to canvas pixel coordinates.
+        
+        This function transforms from a centered coordinate system (where origin is at canvas center)
+        to pixel coordinates (where origin is at canvas top-left). This allows mathematical points
+        to be displayed correctly on the visual canvas.
+        """
+        
+        # TODO: Complete the grid_to_canvas function
+        #
+        # Steps to implement:
+        # 1. Calculate canvas X coordinate:
+        #    - Start with self.origin_x
+        #    - Add (grid_x * self.grid_size)
+        #
+        # 2. Calculate canvas Y coordinate:
+        #    - Start with self.origin_y
+        #    - Subtract (grid_y * self.grid_size)
+        #    - NOTE: We subtract because canvas Y increases downward, but grid Y increases upward
+        #
+        # 3. Return both coordinates as a tuple
+        #
+        # HINT: Formula is: (origin_x + grid_x * size, origin_y - grid_y * size)
+        # HINT: The origin is the center point of the canvas
+        
+        # Write your code here:
+
+
     def canvas_to_grid(self, cx, cy):
-        return (cx - self.origin_x) / self.grid_size, (self.origin_y - cy) / self.grid_size
+        """
+        Converts canvas pixel coordinates back to mathematical grid coordinates.
+        
+        This function performs the inverse transformation of grid_to_canvas(), allowing
+        the system to interpret mouse clicks and canvas positions as mathematical coordinates.
+        """
+        
+        # TODO: Complete the canvas_to_grid function
+        #
+        # Steps to implement:
+        # 1. Calculate grid X coordinate:
+        #    - Subtract self.origin_x from canvas X (cx)
+        #    - Divide by self.grid_size
+        #
+        # 2. Calculate grid Y coordinate:
+        #    - Subtract canvas Y (cy) from self.origin_y (reverse of grid_to_canvas)
+        #    - Divide by self.grid_size
+        #
+        # 3. Return both coordinates as a tuple
+        #
+        # HINT: Formula is: ((cx - origin_x) / size, (origin_y - cy) / size)
+        # HINT: This is the inverse operation of grid_to_canvas()
+        
+        # Write your code here:
 
     # --- Drawing Methods ---
     
@@ -255,34 +361,50 @@ class ConvexHullView:
         self.start_frame = tk.Frame(self.root, bg=self.C_BLACK)
         self.main_app_frame = tk.Frame(self.root, bg=self.C_BLACK)
     def _setup_start_screen(self):
-        # (Your exact setup_start_screen logic, unchanged)
-        try:
-            image_path = "startImage.png"
-            image = Image.open(image_path)
-            image = image.resize((2400, 1600), Image.LANCZOS)
-            self.bg_photo = ImageTk.PhotoImage(image)
-            bg_label = tk.Label(self.start_frame, image=self.bg_photo)
-            bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-        except Exception as e:
-            print(f"Error loading background image: {e}. Using a solid color fallback.")
-            self.start_frame.config(bg=self.C_BLACK)
-        panel_width, panel_height = 750, 450
-        panel_image = Image.new("RGBA", (panel_width, panel_height))
-        self.panel_photo = ImageTk.PhotoImage(panel_image)
-        content_container = tk.Frame(self.start_frame, bg=self.C_BLACK)
-        content_container.config(border=100)
-        content_container.place(relx=0.5, rely=0.5, anchor="center")
-        tk.Label(content_container, text="Convex Hull Algorithms", font=("Inter", 48, "bold"), fg=self.C_WHITE_TEXT, bg=self.C_BLACK).pack(pady=(20, 10), padx=50)
-        tk.Label(content_container, text="Visualizing Jarvis March and Graham Scan.", font=("Inter", 16), fg=self.C_LIGHT_GRAY_TEXT, bg=self.C_BLACK).pack(padx=50)
+        """
+        Sets up the initial welcome/start screen for the Convex Hull Visualization application.
+        
+        This function does the following:
+        1. Loads and displays a background image (with fallback to solid color if image not found)
+        2. Creates a centered content container with a dark background
+        3. Displays the title, subtitle, and description of the application
+        4. Creates and disables a "Proceed to Visualization" button
+        
+        The screen serves as the landing page where users learn about the algorithms
+        before proceeding to the interactive visualization.
+        """
+        
+        # TODO: Complete the entire _setup_start_screen function
+        # 
+        # Steps to implement:
+        # 1. Try to load and display the background image "startImage.png"
+        #    - Resize it to (2400, 1600)
+        #    - Convert it to PhotoImage and place it on self.start_frame
+        #    - If loading fails, catch the exception and set the frame background to self.C_BLACK
+        #
+        # 2. Create a content_container frame (dark background) centered on the screen
+        #    - Use tk.Frame with bg=self.C_BLACK
+        #    - Set border=100
+        #    - Place it at the center using relx=0.5, rely=0.5, anchor="center"
+        #
+        # 3. Add three labels inside content_container:
+        #    a) Title: "Convex Hull Algorithms" (font size 48, bold, white text)
+        #    b) Subtitle: "Visualizing Jarvis March and Graham Scan." (font size 16, light gray)
+        #    c) Description: Use the description_text below (font size 12, wraplength=600)
+        #
+        # 4. Create a "Proceed to Visualization" button using self._create_rounded_button()
+        #    - Set it to disabled state (tk.DISABLED)
+        #    - Pack it at the bottom with pady=20
+        #
+        # HINT: Look at other similar UI setup functions in the code for reference
+        
         description_text = (
             "Explore two classic algorithms for computing the convex hull of a finite set of points. "
             "Jarvis March ('gift wrapping') iteratively finds the next hull point, while Graham Scan "
             "sorts points by angle and uses a stack to build the hull."
         )
-        tk.Label(content_container, text=description_text, font=("Inter", 12), fg=self.C_LIGHT_GRAY_TEXT, bg=self.C_BLACK, wraplength=600, justify="center").pack(pady=40, padx=50)
-        self.proceed_button = self._create_rounded_button(content_container, "Proceed to Visualization", None, bg=self.C_BLUE, fg=self.C_WHITE_TEXT, bg_active=self.C_BLUE_ACTIVE, parent_bg=self.C_BLACK)
-        self.proceed_button.pack(pady=20)
-        self.proceed_button.config(state=tk.DISABLED)
+        
+        # Write your code here:
 
     def _setup_main_app_screen(self):
         # (This is your setup_main_app_screen logic, with ONE ADDITION)
@@ -400,31 +522,85 @@ class ConvexHullView:
         
     # ... (_draw_button_image and _create_rounded_button are unchanged) ...
     def _draw_button_image(self, color, text):
-        image = Image.new("RGBA", (270, 40), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(image)
-        draw.rounded_rectangle((0, 0, 270, 40), 8, fill=color)
-        if hasattr(self.pil_font_bold, "getbbox"):
-            text_bbox = self.pil_font_bold.getbbox(text)
-            text_width, text_height = text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1]
-        else:
-            text_width, text_height = draw.textsize(text, font=self.pil_font_bold)
-        draw.text(((270 - text_width) / 2, (40 - text_height) / 2 - 2), text, fill=self.C_WHITE_TEXT, font=self.pil_font_bold)
-        return ImageTk.PhotoImage(image)
-    def _create_rounded_button(self, parent, text, command, bg, fg, bg_active, parent_bg):
-        img_normal = self._draw_button_image(bg, text)
-        img_active = self._draw_button_image(bg_active, text)
-        button = tk.Label(parent, image=img_normal, cursor="hand2", bg=parent_bg)
-        button.image_normal = img_normal
-        button.image_active = img_active
-        button['state'] = tk.NORMAL
-        def on_click(event):
-            if button['state'] == tk.NORMAL:
-                button.config(image=img_active)
-                if command:
-                    command()
-        def on_release(event):
-            if button['state'] == tk.NORMAL:
-                button.config(image=img_normal)
-        button.bind("<Button-1>", on_click)
-        button.bind("<ButtonRelease-1>", on_release)
-        return button
+        """
+        Draws a rounded button image with text on it.
+        
+        This function creates a visual representation of a button by:
+        1. Creating a transparent RGBA image (270x40 pixels)
+        2. Drawing a rounded rectangle shape on it with the specified color
+        3. Calculating the text dimensions to center it properly
+        4. Drawing the text in the center of the button
+        5. Converting the image to a PhotoImage format for Tkinter
+        
+        This image is used to display buttons in the GUI with custom styling.
+        """
+        
+        # TODO: Complete the _draw_button_image function
+        #
+        # Steps to implement:
+        # 1. Create a new transparent RGBA image with size (270, 40)
+        #    - Use Image.new("RGBA", (270, 40), (0, 0, 0, 0))
+        #
+        # 2. Create an ImageDraw object to draw on the image
+        #    - Use ImageDraw.Draw(image)
+        #
+        # 3. Draw a rounded rectangle on the image:
+        #    - Coordinates: (0, 0, 270, 40)
+        #    - Corner radius: 8
+        #    - Fill color: use the 'color' parameter
+        #
+        # 4. Calculate text dimensions:
+        #    - Check if self.pil_font_bold has "getbbox" method
+        #    - If yes: use getbbox() to get text width and height
+        #    - If no: use draw.textsize() as fallback
+        #
+        # 5. Draw the text centered on the button:
+        #    - Calculate center position: ((270 - text_width) / 2, (40 - text_height) / 2 - 2)
+        #    - Use text color: self.C_WHITE_TEXT
+        #    - Use font: self.pil_font_bold
+        #
+        # 6. Convert the image to PhotoImage format and return it
+        #    - Use ImageTk.PhotoImage(image)
+        #
+        # HINT: Text centering formula: (button_width - text_width) / 2
+        # HINT: The -2 offset helps vertically center the text better
+        
+        # Write your code here:
+
+
+    def _update_button_text(self, button, text):
+        """
+        Updates the text displayed on an existing button.
+        
+        This function does the following:
+        1. Redraws the button image with new text while keeping the same colors
+        2. Updates the button's display with the new image
+        3. Stores the new image on the button to prevent garbage collection
+        
+        This is useful for dynamically changing button labels during runtime.
+        """
+        
+        # TODO: Complete the _update_button_text function
+        #
+        # Steps to implement:
+        # 1. Check if the button has 'image_normal' attribute (to get the normal state image)
+        #
+        # 2. Redraw the button image with the new text:
+        #    - The button should have stored the background color and active color
+        #    - You may need to extract the color from existing button images
+        #    - Call self._draw_button_image(color, text) to create the new image
+        #
+        # 3. Update the button display:
+        #    - Use button.config(image=new_image) to show the new image
+        #
+        # 4. Store the new image on the button:
+        #    - Assign it to button.image_normal to prevent garbage collection
+        #
+        # HINT: The button object stores image_normal and image_active attributes
+        # HINT: You need to determine what color was used for the original button
+        # HINT: Look for color information stored on the button widget
+        #
+        # NOTE: This is a bit tricky because you need to figure out the original color.
+        #       Think about what information the button already has stored.
+        
+        # Write your code here:
