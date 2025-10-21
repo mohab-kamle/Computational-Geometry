@@ -1,0 +1,12 @@
+📝 Instructions for Hassan:
+
+Complete all 4 functions that handle screen transitions and coordinate conversions.
+
+Functions to complete:
+
+    show_main_app() - Switch from start screen to main app
+    show_start_screen() - Switch back to start screen
+    grid_to_canvas() - Convert math coordinates to pixel positions
+    canvas_to_grid() - Convert pixel positions to math coordinates
+
+These handle the UI transitions and coordinate system for the visualization! 📊

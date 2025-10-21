@@ -1,0 +1,13 @@
+📝 Instructions for Mahmoud:
+
+You need to rewrite the entire _setup_start_screen() function from scratch based on the detailed TODO instructions above.
+
+Key things to remember:
+
+    Use try-except for image loading
+    Create a centered frame for content
+    Add 3 labels (title, subtitle, description)
+    Create and disable the "Proceed to Visualization" button
+    Use the color constants like self.C_BLACK, self.C_WHITE_TEXT, etc.
+
+This should be doable with the hints provided! 💪

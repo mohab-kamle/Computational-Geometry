@@ -1,0 +1,16 @@
+📝 Instructions for Nourhan & Mahmoud Omer:
+
+You need to complete both functions:
+
+Function 1: _draw_button_image()
+
+    Creates a visual button image with text centered on it
+    Returns a PhotoImage that can be displayed in Tkinter
+
+Function 2: _update_button_text()
+
+    Updates an existing button with new text
+    Redraws the button while keeping the same colors
+    Prevents image garbage collection
+
+These functions work together to create and update interactive buttons! 🎨

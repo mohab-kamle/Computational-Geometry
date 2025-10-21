@@ -27,11 +27,27 @@ class ConvexHullView:
     
     def __init__(self, root):
         self.root = root
-        self.root.title("Convex Hull Visualization") # More general title
+        self.root.title("Convex Hull Visualization")  # More general title
         self.root.configure(bg=self.C_BLACK)
-        self.root.state("zoomed")
-        
-        # ... (rest of __init__ is unchanged) ...
+
+        # --- Cross-platform maximize handling ---
+        import platform
+        system = platform.system()
+        try:
+            if system == "Windows":
+                # Works on Windows
+                self.root.state("zoomed")
+            elif system == "Linux":
+                # Works on Linux (Mint, Ubuntu, etc.)
+                self.root.attributes("-zoomed", True)
+            else:
+                # macOS or unknown -> safe normal window
+                self.root.state("normal")
+        except Exception:
+            self.root.state("normal")
+        # ----------------------------------------
+
+        # ... rest of your code ...
         self.grid_size = 20
         self.min_grid_size = 4
         self.max_grid_size = 120
@@ -47,6 +63,8 @@ class ConvexHullView:
         self._setup_main_app_screen()
         self.show_start_screen()
         self._center_window()
+
+
 
     # --- Public Methods (Called by Controller) ---
     
