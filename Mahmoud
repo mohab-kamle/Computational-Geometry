@@ -11,3 +11,5 @@ Key things to remember:
     Use the color constants like self.C_BLACK, self.C_WHITE_TEXT, etc.
 
 This should be doable with the hints provided! 💪
+
+Start in code file (view.py) line 352
