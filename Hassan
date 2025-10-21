@@ -10,3 +10,5 @@ Functions to complete:
     canvas_to_grid() - Convert pixel positions to math coordinates
 
 These handle the UI transitions and coordinate system for the visualization! 📊
+
+Start in code file (view.py) line 117
