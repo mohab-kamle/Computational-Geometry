@@ -15,23 +15,24 @@ class ConvexHullView:
     C_WHITE_TEXT = "#f5f5f7"
     C_BLUE = "#0071e3"
     C_BLUE_ACTIVE = "#0077ed"
+    C_GREEN = "#10b981"
+    C_GREEN_ACTIVE = "#059669"
     C_HULL_LINE = "#0071e3"
     C_HULL_FILL = "red"
     C_POINT_BLUE = "#0071e3"
-    C_POINT_P = "#f59e0b" # Yellow (Jarvis P / Graham Pivot)
-    C_LINE_Q = "#10b981"  # Green (Jarvis Q / Graham Stack Line)
-    C_LINE_I = "#ef4444"  # Red (Jarvis I / Graham Check Line)
+    C_POINT_P = "#f59e0b"
+    C_LINE_Q = "#10b981"
+    C_LINE_I = "#ef4444"
     
     FONT_BOLD = ("Inter", 12, "bold")
     FONT_NORMAL = ("Inter", 10)
     
     def __init__(self, root):
         self.root = root
-        self.root.title("Convex Hull Visualization") # More general title
+        self.root.title("Convex Hull Visualization")
         self.root.configure(bg=self.C_BLACK)
         self.root.state("zoomed")
         
-        # ... (rest of __init__ is unchanged) ...
         self.grid_size = 20
         self.min_grid_size = 4
         self.max_grid_size = 120
@@ -50,11 +51,16 @@ class ConvexHullView:
 
     # --- Public Methods (Called by Controller) ---
     
-    # ... (bind methods are unchanged) ...
     def bind_proceed_to_main(self, command):
+        #-- FIX: Set the command on the button object, don't re-bind.
         self.proceed_button.config(state=tk.NORMAL)
-        self.proceed_button.bind("<Button-1>", lambda e: command())
-        self.proceed_button.bind("<ButtonRelease-1>", lambda e: self.proceed_button.config(image=self.proceed_button.image_normal))
+        self.proceed_button.command = command
+    
+    def bind_proceed_to_dual(self, command):
+        #-- FIX: Set the command on the button object, don't re-bind.
+        self.dual_comparison_button.config(state=tk.NORMAL)
+        self.dual_comparison_button.command = command
+    
     def bind_start_animation(self, command): self.start_button_command = command
     def bind_reset(self, command): self.reset_button_command = command
     def bind_pause_resume(self, command): self.pause_resume_command = command
@@ -68,14 +74,12 @@ class ConvexHullView:
         self.canvas.bind("<Button-5>", on_zoom)
     def bind_resize(self, command): self.canvas.bind("<Configure>", command)
 
-    # --- NEW: Get selected algorithm ---
     def get_selected_algorithm(self):
         return self.algo_combobox.get()
         
     def get_speed(self):
         return int(self.speed_scale.get())
 
-    # ... (update_status, update_analysis, etc. are unchanged) ...
     def update_status(self, text): self.status_text.set(text)
     def update_analysis(self, text): self.analysis_text.set(text)
     def show_animation_panels(self):
@@ -92,11 +96,10 @@ class ConvexHullView:
         self.reset_button.config(state=reset_state)
         self.pause_resume_button.config(state=pause_state)
         self.next_step_button.config(state=next_state)
-        self.algo_combobox.config(state=combo_state) # Update combobox state
+        self.algo_combobox.config(state=combo_state)
         
         self._update_button_text(self.pause_resume_button, pause_text)
 
-    # ... (show_main_app, show_start_screen, grid_to_canvas, canvas_to_grid are unchanged) ...
     def show_main_app(self):
         self.start_frame.pack_forget()
         self.main_app_frame.pack(fill=tk.BOTH, expand=True, padx=32, pady=24)
@@ -127,56 +130,47 @@ class ConvexHullView:
         if hull:
             self._draw_final_hull_shape(hull)
 
-    # --- RENAMED from draw_animation_step ---
     def draw_jarvis_step(self, points, p_point, q_point, i_point, hull_so_far):
         """Draws a single step of the Jarvis March animation."""
-        self.draw_all(points, hull=None, clear=True) # Redraw base
+        self.draw_all(points, hull=None, clear=True)
         
         p_c = self.grid_to_canvas(p_point['grid_x'], p_point['grid_y'])
         q_c = self.grid_to_canvas(q_point['grid_x'], q_point['grid_y'])
         i_c = self.grid_to_canvas(i_point['grid_x'], i_point['grid_y'])
         
         self.canvas.create_oval(p_c[0]-6, p_c[1]-6, p_c[0]+6, p_c[1]+6, fill=self.C_POINT_P, outline="")
-        self.canvas.create_line(p_c, q_c, fill=self.C_LINE_Q, width=2) # Best so far (green)
-        self.canvas.create_line(p_c, i_c, fill=self.C_LINE_I, width=1) # Current test (red)
+        self.canvas.create_line(p_c, q_c, fill=self.C_LINE_Q, width=2)
+        self.canvas.create_line(p_c, i_c, fill=self.C_LINE_I, width=1)
         
         self._draw_final_hull_shape(hull_so_far, outline_only=True)
 
-    # --- NEW: Graham Scan Drawing Method ---
     def draw_graham_step(self, points, pivot, sorted_points, stack, check_point, status):
         """Draws a single step of the Graham Scan animation."""
-        self.draw_all(points, hull=None, clear=True) # Redraw base
+        self.draw_all(points, hull=None, clear=True)
         
-        # Draw pivot
         if pivot:
             p_c = self.grid_to_canvas(pivot['grid_x'], pivot['grid_y'])
             self.canvas.create_oval(p_c[0]-7, p_c[1]-7, p_c[0]+7, p_c[1]+7, fill=self.C_POINT_P, outline="")
             
-        # Draw sorted lines (for 'sorted' status)
         if status == 'sorted':
             for point in sorted_points:
                 pt_c = self.grid_to_canvas(point['grid_x'], point['grid_y'])
                 self.canvas.create_line(p_c, pt_c, fill=self.C_MED_GRAY, width=1, dash=(2, 4))
         
-        # Draw the stack
         if len(stack) >= 2:
             stack_coords = []
             for p in stack:
                 stack_coords.extend(self.grid_to_canvas(p['grid_x'], p['grid_y']))
             self.canvas.create_line(stack_coords, fill=self.C_LINE_Q, width=3)
         
-        # Draw the check lines
         if status in ['checking', 'popping', 'pushing'] and check_point and len(stack) >= 2:
             top_c = self.grid_to_canvas(stack[-1]['grid_x'], stack[-1]['grid_y'])
             next_top_c = self.grid_to_canvas(stack[-2]['grid_x'], stack[-2]['grid_y'])
             check_c = self.grid_to_canvas(check_point['grid_x'], check_point['grid_y'])
             
-            # Line from next-to-top to top (part of stack)
             self.canvas.create_line(next_top_c, top_c, fill=self.C_LINE_Q, width=4)
-            # Line from top to check_point (the test)
             self.canvas.create_line(top_c, check_c, fill=self.C_LINE_I, width=2, dash=(4, 4))
 
-    # ... (_draw_final_hull_shape and _draw_axes_and_grid are unchanged) ...
     def _draw_final_hull_shape(self, hull, outline_only=False):
         if not hull: return
         hull_coords = [c for p in hull for c in self.grid_to_canvas(p['grid_x'], p['grid_y'])]
@@ -188,8 +182,8 @@ class ConvexHullView:
         for p in hull:
             cx, cy = self.grid_to_canvas(p['grid_x'], p['grid_y'])
             self.canvas.create_oval(cx-6, cy-6, cx+6, cy+6, fill=self.C_HULL_LINE, outline="")
+    
     def _draw_axes_and_grid(self):
-        # (This is your exact draw_axes_and_grid logic, unchanged)
         grid_step = self.grid_size
         if self.grid_size < 10: grid_step *= 2
         label_step = 1
@@ -222,10 +216,8 @@ class ConvexHullView:
         self.canvas.create_line(self.origin_x, 0, self.origin_x, self.canvas_height, fill="#888888", width=1)
         self.canvas.create_text(self.origin_x - 5, self.origin_y + 5, text="0", anchor="se", fill=self.C_LIGHT_GRAY_TEXT, font=("Inter", 9, "bold"))
 
-
     # --- Internal UI Setup Methods ---
     
-    # ... (_center_window, _setup_frames, _setup_start_screen are unchanged) ...
     def _center_window(self):
         self.root.update_idletasks()
         width = self.root.winfo_width()
@@ -233,11 +225,12 @@ class ConvexHullView:
         x = (self.root.winfo_screenwidth() // 2) - (width // 2)
         y = (self.root.winfo_screenheight() // 2) - (height // 2)
         self.root.geometry(f'{width}x{height}+{x}+{y}')
+    
     def _setup_frames(self):
         self.start_frame = tk.Frame(self.root, bg=self.C_BLACK)
         self.main_app_frame = tk.Frame(self.root, bg=self.C_BLACK)
+    
     def _setup_start_screen(self):
-        # (Your exact setup_start_screen logic, unchanged)
         try:
             image_path = "startImage.png"
             image = Image.open(image_path)
@@ -248,27 +241,37 @@ class ConvexHullView:
         except Exception as e:
             print(f"Error loading background image: {e}. Using a solid color fallback.")
             self.start_frame.config(bg=self.C_BLACK)
+        
         panel_width, panel_height = 750, 450
         panel_image = Image.new("RGBA", (panel_width, panel_height))
         self.panel_photo = ImageTk.PhotoImage(panel_image)
         content_container = tk.Frame(self.start_frame, bg=self.C_BLACK)
         content_container.config(border=100)
         content_container.place(relx=0.5, rely=0.5, anchor="center")
+        
         tk.Label(content_container, text="Convex Hull Algorithms", font=("Inter", 48, "bold"), fg=self.C_WHITE_TEXT, bg=self.C_BLACK).pack(pady=(20, 10), padx=50)
         tk.Label(content_container, text="Visualizing Jarvis March and Graham Scan.", font=("Inter", 16), fg=self.C_LIGHT_GRAY_TEXT, bg=self.C_BLACK).pack(padx=50)
+        
         description_text = (
             "Explore two classic algorithms for computing the convex hull of a finite set of points. "
             "Jarvis March ('gift wrapping') iteratively finds the next hull point, while Graham Scan "
             "sorts points by angle and uses a stack to build the hull."
         )
         tk.Label(content_container, text=description_text, font=("Inter", 12), fg=self.C_LIGHT_GRAY_TEXT, bg=self.C_BLACK, wraplength=600, justify="center").pack(pady=40, padx=50)
-        self.proceed_button = self._create_rounded_button(content_container, "Proceed to Visualization", None, bg=self.C_BLUE, fg=self.C_WHITE_TEXT, bg_active=self.C_BLUE_ACTIVE, parent_bg=self.C_BLACK)
-        self.proceed_button.pack(pady=20)
+        
+        # Single Algorithm Button
+        #-- FIX: Pass 'command=None' so the internal handler can be assigned later
+        self.proceed_button = self._create_rounded_button(content_container, "Single Algorithm Mode", None, bg=self.C_BLUE, fg=self.C_WHITE_TEXT, bg_active=self.C_BLUE_ACTIVE, parent_bg=self.C_BLACK)
+        self.proceed_button.pack(pady=(0, 15))
         self.proceed_button.config(state=tk.DISABLED)
+        
+        # Dual Comparison Button
+        #-- FIX: Pass 'command=None' so the internal handler can be assigned later
+        self.dual_comparison_button = self._create_rounded_button(content_container, "Dual Comparison Mode", None, bg=self.C_GREEN, fg=self.C_WHITE_TEXT, bg_active=self.C_GREEN_ACTIVE, parent_bg=self.C_BLACK)
+        self.dual_comparison_button.pack(pady=(0, 20))
+        self.dual_comparison_button.config(state=tk.DISABLED)
 
     def _setup_main_app_screen(self):
-        # (This is your setup_main_app_screen logic, with ONE ADDITION)
-        
         content_frame = tk.Frame(self.main_app_frame, bg=self.C_BLACK)
         content_frame.pack(fill=tk.BOTH, expand=True)
         canvas_border_frame = tk.Frame(content_frame, bg=self.C_MED_GRAY, padx=1, pady=1)
@@ -280,12 +283,10 @@ class ConvexHullView:
         controls_panel.pack_propagate(False)
         tk.Label(controls_panel, text="Controls", font=("Inter", 18, "bold"), fg=self.C_WHITE_TEXT, bg=self.C_NEAR_BLACK).pack(anchor="center", pady=(0, 12))
 
-        # --- NEW: Algorithm Selection ---
         algo_frame = tk.Frame(controls_panel, bg=self.C_NEAR_BLACK)
         algo_frame.pack(fill=tk.X, pady=(0, 10))
         tk.Label(algo_frame, text="Algorithm:", font=self.FONT_NORMAL, fg=self.C_LIGHT_GRAY_TEXT, bg=self.C_NEAR_BLACK).pack(side=tk.LEFT, padx=(4, 10))
         
-        # Style for the Combobox
         style = ttk.Style()
         style.theme_use('clam')
         style.configure('TCombobox', 
@@ -311,12 +312,10 @@ class ConvexHullView:
         )
         self.algo_combobox.set("Jarvis March")
         self.algo_combobox.pack(fill=tk.X, expand=True)
-        # --- End of New Section ---
 
         buttons_row = tk.Frame(controls_panel, bg=self.C_NEAR_BLACK)
         buttons_row.pack(fill=tk.X, pady=(0, 12))
         
-        # ... (rest of setup_main_app_screen is unchanged) ...
         self.start_button = self._create_rounded_button(buttons_row, "Start", lambda: self.start_button_command(), bg=self.C_BLUE, fg=self.C_WHITE_TEXT, bg_active=self.C_BLUE_ACTIVE, parent_bg=self.C_NEAR_BLACK)
         self.start_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 6))
         self.reset_button = self._create_rounded_button(buttons_row, "Reset", lambda: self.reset_button_command(), bg=self.C_DARK_GRAY, fg=self.C_WHITE_TEXT, bg_active=self.C_MED_GRAY, parent_bg=self.C_NEAR_BLACK)
@@ -366,12 +365,10 @@ class ConvexHullView:
         self.analysis_frame.pack_forget()
         self.results_frame.pack_forget()
 
-    # --- UI Helpers (Owned by View) ---
     def _update_button_text(self, button, text):
-        # (This logic is new, to handle different button colors)
         if button == self.pause_resume_button:
             bg, active_bg = self.C_DARK_GRAY, self.C_MED_GRAY
-        else: # Add other button types if needed
+        else:
             bg, active_bg = self.C_BLUE, self.C_BLUE_ACTIVE
             
         img_normal = self._draw_button_image(bg, text)
@@ -380,7 +377,6 @@ class ConvexHullView:
         button.image_normal = img_normal
         button.image_active = img_active
         
-    # ... (_draw_button_image and _create_rounded_button are unchanged) ...
     def _draw_button_image(self, color, text):
         image = Image.new("RGBA", (270, 40), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
@@ -389,9 +385,11 @@ class ConvexHullView:
             text_bbox = self.pil_font_bold.getbbox(text)
             text_width, text_height = text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1]
         else:
-            text_width, text_height = draw.textsize(text, font=self.pil_font_bold)
+            # Fallback for older PIL versions
+            text_width, text_height = draw.textsize(text, font=self.pil_font_bold) 
         draw.text(((270 - text_width) / 2, (40 - text_height) / 2 - 2), text, fill=self.C_WHITE_TEXT, font=self.pil_font_bold)
         return ImageTk.PhotoImage(image)
+    
     def _create_rounded_button(self, parent, text, command, bg, fg, bg_active, parent_bg):
         img_normal = self._draw_button_image(bg, text)
         img_active = self._draw_button_image(bg_active, text)
@@ -399,14 +397,20 @@ class ConvexHullView:
         button.image_normal = img_normal
         button.image_active = img_active
         button['state'] = tk.NORMAL
+        
+        #-- FIX: Store the command on the object so it can be set/changed
+        button.command = command 
+        
         def on_click(event):
             if button['state'] == tk.NORMAL:
                 button.config(image=img_active)
-                if command:
-                    command()
+                #-- FIX: Call the stored command
+                if button.command:
+                    button.command()
         def on_release(event):
             if button['state'] == tk.NORMAL:
                 button.config(image=img_normal)
+                
         button.bind("<Button-1>", on_click)
         button.bind("<ButtonRelease-1>", on_release)
         return button

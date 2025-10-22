@@ -231,6 +231,7 @@ class ConvexHullModel:
             # stack[-2] = next-to-top, stack[-1] = top
             o, val = self._orientation(stack[-2], stack[-1], current_point)
             
+            
             while o != 2: # While not counter-clockwise (i.e., clockwise or collinear)
                 popped = stack.pop()
                 

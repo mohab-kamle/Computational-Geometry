@@ -1,33 +1,35 @@
 # controller.py
 # (Owned by integration/lead developer)
 import tkinter as tk
-# --- RENAMED MODEL ---
 from model import ConvexHullModel
 from view import ConvexHullView
 
 class ConvexHullController:
     def __init__(self, root):
         self.root = root
-        # --- RENAMED MODEL ---
         self.model = ConvexHullModel()
         self.view = ConvexHullView(root)
         
-        # --- Animation State ---
+        # Dual comparison view (lazy load)
+        self.dual_comparison_view = None
+        
+        # Animation State
         self.is_running = False
         self.is_paused = False
         self.next_step_requested = False
         self.animation_job = None
         self.algorithm_generator = None
-        self.current_algorithm_name = None # NEW: To track which algo is running
+        self.current_algorithm_name = None
         
-        # ... (Canvas Pan/Click State is unchanged) ...
+        # Canvas Pan/Click State
         self.is_panning = False
         self.last_pan_x = 0
         self.last_pan_y = 0
         self._click_job = None
         
-        # --- Bind View Events to Controller Methods ---
+        # Bind View Events to Controller Methods
         self.view.bind_proceed_to_main(self.show_main_app)
+        self.view.bind_proceed_to_dual(self.show_dual_comparison)
         self.view.bind_start_animation(self.start_animation)
         self.view.bind_reset(self.reset)
         self.view.bind_pause_resume(self.toggle_pause_resume)
@@ -45,11 +47,25 @@ class ConvexHullController:
 
     # --- Event Handlers (Called by View) ---
     
-    # ... (show_main_app, on_resize, on_canvas_press, on_pan, 
-    #      on_pan_release, _perform_add_point, on_zoom are unchanged) ...
     def show_main_app(self):
         self.view.show_main_app()
         self.view.draw_all(self.model.get_points(), self.model.get_hull())
+    
+    def show_dual_comparison(self):
+        """Switch to dual comparison mode."""
+        if self.dual_comparison_view is None:
+            # Lazy load the dual comparison view
+            from dual_comparison_view import DualComparisonView
+            self.dual_comparison_view = DualComparisonView(self.root, self)
+        
+        # Hide the start screen
+        self.view.start_frame.pack_forget()
+        
+        # Show dual comparison view
+        self.dual_comparison_view.main_frame.pack(fill=tk.BOTH, expand=True)
+        #-- MODIFIED: Ensure dual view is drawn correctly on show
+        self.dual_comparison_view.resize_canvases() 
+    
     def on_resize(self, event):
         self.view.canvas_width = event.width
         self.view.canvas_height = event.height
@@ -57,10 +73,12 @@ class ConvexHullController:
             self.view.origin_x = event.width / 2
             self.view.origin_y = event.height / 2
         self.view.draw_all(self.model.get_points(), self.model.get_hull())
+    
     def on_canvas_press(self, event):
         if self.is_running: return
         self.last_pan_x, self.last_pan_y = event.x, event.y
         self._click_job = self.root.after(200, self._perform_add_point, event)
+    
     def on_pan(self, event):
         if self._click_job:
             self.root.after_cancel(self._click_job)
@@ -72,28 +90,34 @@ class ConvexHullController:
         self.view.origin_y += dy
         self.last_pan_x, self.last_pan_y = event.x, event.y
         self.view.draw_all(self.model.get_points(), self.model.get_hull())
+    
     def on_pan_release(self, event):
         if self._click_job:
             self.root.after_cancel(self._click_job)
             self._perform_add_point(event)
         self.is_panning = False
+    
     def _perform_add_point(self, event):
         grid_x_f, grid_y_f = self.view.canvas_to_grid(event.x, event.y)
         grid_x, grid_y = round(grid_x_f), round(grid_y_f)
         if self.model.add_point(grid_x, grid_y):
             self.view.draw_all(self.model.get_points(), self.model.get_hull())
             self._update_ui_states()
+    
     def on_zoom(self, event):
         zoom_factor = 1.1 if event.num == 4 or event.delta > 0 else 0.9
         new_grid_size = self.view.grid_size * zoom_factor
         if self.view.min_grid_size <= new_grid_size <= self.view.max_grid_size:
             wx, wy = self.view.canvas_to_grid(event.x, event.y)
             self.view.grid_size = new_grid_size
+            # wx = (ex - ox) / gs => ox = ex - wx * gs
             self.view.origin_x = event.x - wx * self.view.grid_size
-            self.view.origin_y = event.y - wy * self.view.grid_size
+            # wy = (oy - ey) / gs => oy = ey + wy * gs
+            #-- FIX: Corrected Y-origin calculation
+            self.view.origin_y = event.y + wy * self.view.grid_size 
             self.view.draw_all(self.model.get_points(), self.model.get_hull())
 
-    # --- Control Logic (UPDATED) ---
+    # --- Control Logic ---
     
     def start_animation(self):
         if self.is_running or self.model.get_point_count() < 3:
@@ -104,7 +128,6 @@ class ConvexHullController:
         self.view.show_animation_panels()
         self.view.hide_results()
         
-        # --- NEW: Check which algorithm is selected ---
         self.current_algorithm_name = self.view.get_selected_algorithm()
         
         if self.current_algorithm_name == "Jarvis March":
@@ -112,7 +135,6 @@ class ConvexHullController:
         elif self.current_algorithm_name == "Graham Scan":
             self.algorithm_generator = self.model.run_graham_scan()
         else:
-            # Fallback
             print(f"Unknown algorithm: {self.current_algorithm_name}")
             self.is_running = False
             return
@@ -138,8 +160,6 @@ class ConvexHullController:
 
             self.view.update_analysis(update_data['description'])
             
-            # --- NEW: Route to the correct drawing function ---
-            
             if update_data.get('type') == 'jarvis':
                 p = self.model.points[update_data['p_idx']]
                 q = self.model.points[update_data['q_idx']]
@@ -151,10 +171,8 @@ class ConvexHullController:
                 )
                 
             elif update_data.get('type') == 'graham':
-                check_point = None
-                if update_data.get('check_point_id') is not None:
-                     # Find the check point by its unique ID
-                     check_point = next((p for p in self.model.points if p['id'] == update_data['check_point_id']), None)
+                #-- FIX: Get the full point object from the yield (model was changed)
+                check_point = update_data.get('check_point')
 
                 self.view.draw_graham_step(
                     self.model.get_points(),
@@ -165,7 +183,6 @@ class ConvexHullController:
                     update_data['status']
                 )
 
-            # Schedule the next step
             if not self.is_paused:
                 delay = self.view.get_speed()
                 self.animation_job = self.root.after(delay, self._run_animation_step)
@@ -182,14 +199,13 @@ class ConvexHullController:
         self.is_running = False
         self.is_paused = False
         self.algorithm_generator = None
-        self.current_algorithm_name = None # Clear current algo
+        self.current_algorithm_name = None
         
         if final_data:
             self.view.update_status("Convex hull complete!")
             self.view.update_analysis("Algorithm finished. The final convex hull is shown.")
             self.view.show_results(
                 time_text=f"Time: {final_data['time_ms']:.2f} ms",
-                # The complexity string now comes from the model
                 complexity_text=final_data['complexity']
             )
             self.view.draw_all(self.model.get_points(), self.model.get_hull())
@@ -206,7 +222,7 @@ class ConvexHullController:
         self.is_running = False
         self.is_paused = False
         self.algorithm_generator = None
-        self.current_algorithm_name = None # Clear current algo
+        self.current_algorithm_name = None
         
         self.model.reset()
         
@@ -243,18 +259,18 @@ class ConvexHullController:
             pause_state = tk.NORMAL
             pause_text = "Resume" if self.is_paused else "Pause"
             next_state = tk.NORMAL if self.is_paused else tk.DISABLED
-            combo_state = "disabled" # Can't change algo while running
+            combo_state = "disabled"
             
             if not self.is_paused:
                 self.view.update_status(f"{self.current_algorithm_name} is running...")
 
-        else: # Not running
+        else:
             start_state = tk.NORMAL if num_points >= 3 else tk.DISABLED
             reset_state = tk.NORMAL
             pause_state = tk.DISABLED
             pause_text = "Pause"
             next_state = tk.DISABLED
-            combo_state = "readonly" # Can change algo
+            combo_state = "readonly"
             
             if num_points < 3:
                 self.view.update_status(f"Add {3 - num_points} more point(s).")
