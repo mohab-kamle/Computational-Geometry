@@ -34,7 +34,7 @@ class ConvexHullController:
         self.view.bind_reset(self.reset)
         self.view.bind_pause_resume(self.toggle_pause_resume)
         self.view.bind_next_step(self.next_step)
-        
+        self.view.bind_back_to_start(self.back_to_start_screen)
         self.view.bind_canvas_events(
             self.on_canvas_press,
             self.on_pan,
@@ -50,6 +50,16 @@ class ConvexHullController:
     def show_main_app(self):
         self.view.show_main_app()
         self.view.draw_all(self.model.get_points(), self.model.get_hull())
+    
+    def show_start_screen(self):
+        # Hide main app UI
+        self.view.start_frame.pack_forget()
+        self.view.analysis_frame.pack_forget()
+        self.view.anim_controls_frame.pack_forget()
+        self.view.results_frame.pack_forget()
+
+        # Show start screen again
+        self.view.start_frame.pack(fill=tk.BOTH, expand=True)
     
     def show_dual_comparison(self):
         """Switch to dual comparison mode."""
@@ -255,20 +265,22 @@ class ConvexHullController:
         
         if self.is_running:
             start_state = tk.DISABLED
-            reset_state = tk.DISABLED
+            reset_state = tk.NORMAL  # Allow reset during animation
             pause_state = tk.NORMAL
-            pause_text = "Resume" if self.is_paused else "Pause"
+            pause_text = "Resume" if self.is_paused else "Pause"  # Correct text
             next_state = tk.NORMAL if self.is_paused else tk.DISABLED
             combo_state = "disabled"
             
             if not self.is_paused:
                 self.view.update_status(f"{self.current_algorithm_name} is running...")
+            else:
+                self.view.update_status("Animation paused - click Next Step or Resume")
 
         else:
             start_state = tk.NORMAL if num_points >= 3 else tk.DISABLED
             reset_state = tk.NORMAL
             pause_state = tk.DISABLED
-            pause_text = "Pause"
+            pause_text = "Pause"  # Default text
             next_state = tk.DISABLED
             combo_state = "readonly"
             
@@ -277,11 +289,47 @@ class ConvexHullController:
             else:
                 self.view.update_status("Ready to visualize.")
         
+        # Update button states AND text
         self.view.set_button_states(
             start_state=start_state,
             reset_state=reset_state,
-            pause_text=pause_text,
+            pause_text=pause_text,  # This ensures text gets updated
             pause_state=pause_state,
             next_state=next_state,
             combo_state=combo_state
         )
+    def back_to_start_screen(self):
+        """
+        ✅ NEW METHOD: Returns to the start screen and cleans up.
+        
+        This method:
+        1. Stops any running animation
+        2. Resets the model
+        3. Hides the main app
+        4. Shows the start screen
+        """
+        # Stop animation if running
+        if self.animation_job:
+            self.root.after_cancel(self.animation_job)
+            self.animation_job = None
+        
+        # Reset animation state
+        self.is_running = False
+        self.is_paused = False
+        self.algorithm_generator = None
+        self.current_algorithm_name = None
+        
+        # Reset the model (clear all points)
+        self.model.reset()
+        
+        # Hide animation panels
+        self.view.anim_controls_frame.pack_forget()
+        self.view.analysis_frame.pack_forget()
+        self.view.results_frame.pack_forget()
+        
+        # Show the start screen
+        self.view.show_start_screen()
+        
+        # If dual comparison view was open, hide it too
+        if self.dual_comparison_view:
+            self.dual_comparison_view.main_frame.pack_forget()

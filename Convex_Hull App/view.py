@@ -73,6 +73,9 @@ class ConvexHullView:
         self.canvas.bind("<Button-4>", on_zoom)
         self.canvas.bind("<Button-5>", on_zoom)
     def bind_resize(self, command): self.canvas.bind("<Configure>", command)
+    def bind_back_to_start(self, command):
+        """Bind the back to start button command."""
+        self.back_to_start_command = command
 
     def get_selected_algorithm(self):
         return self.algo_combobox.get()
@@ -281,6 +284,21 @@ class ConvexHullView:
         controls_panel = tk.Frame(content_frame, width=520, bg=self.C_NEAR_BLACK, padx=12, pady=12)
         controls_panel.pack(side=tk.RIGHT, fill=tk.Y)
         controls_panel.pack_propagate(False)
+    # Back button at the very bottom
+        back_button_frame = tk.Frame(controls_panel, bg=self.C_NEAR_BLACK)
+        back_button_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=(0, 0))
+        
+        self.back_to_start_button = self._create_rounded_button(
+            back_button_frame, 
+            "Back to Start", 
+            lambda: self.back_to_start_command(), 
+            bg=self.C_MED_GRAY,  # Darker gray background
+            fg=self.C_WHITE_TEXT, 
+            bg_active=self.C_DARK_GRAY,  # Even darker when clicked
+            parent_bg=self.C_NEAR_BLACK
+        )
+        self.back_to_start_button.pack(fill=tk.X)
+            
         tk.Label(controls_panel, text="Controls", font=("Inter", 18, "bold"), fg=self.C_WHITE_TEXT, bg=self.C_NEAR_BLACK).pack(anchor="center", pady=(0, 12))
 
         algo_frame = tk.Frame(controls_panel, bg=self.C_NEAR_BLACK)
@@ -391,6 +409,9 @@ class ConvexHullView:
         return ImageTk.PhotoImage(image)
     
     def _create_rounded_button(self, parent, text, command, bg, fg, bg_active, parent_bg):
+        """
+        ✅ FIXED: Properly handles button commands
+        """
         img_normal = self._draw_button_image(bg, text)
         img_active = self._draw_button_image(bg_active, text)
         button = tk.Label(parent, image=img_normal, cursor="hand2", bg=parent_bg)
@@ -398,19 +419,24 @@ class ConvexHullView:
         button.image_active = img_active
         button['state'] = tk.NORMAL
         
-        #-- FIX: Store the command on the object so it can be set/changed
+        # ✅ FIX: Store the command on the object so it can be set/changed
         button.command = command 
         
         def on_click(event):
+            # ✅ FIX: Check if button is enabled before executing
             if button['state'] == tk.NORMAL:
                 button.config(image=img_active)
-                #-- FIX: Call the stored command
-                if button.command:
+                # ✅ FIX: Call the stored command if it exists
+                if button.command is not None:
                     button.command()
+        
         def on_release(event):
+            # ✅ FIX: Only change image back if button is enabled
             if button['state'] == tk.NORMAL:
                 button.config(image=img_normal)
-                
-        button.bind("<Button-1>", on_click)
+        
+        # ✅ FIX: Use <ButtonPress-1> and <ButtonRelease-1> for more reliable binding
+        button.bind("<ButtonPress-1>", on_click)
         button.bind("<ButtonRelease-1>", on_release)
+        
         return button
