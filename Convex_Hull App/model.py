@@ -152,7 +152,7 @@ class ConvexHullModel:
             o, _ = self._orientation(self.pivot, p1, p2)
             
             if o == 0: # Collinear
-                # Keep the farthest point
+                # Keep the farthest point (for now)
                 if self._distance_sq(self.pivot, p1) < self._distance_sq(self.pivot, p2):
                     return -1 # p2 is farther, so it comes "after" p1
                 else:
@@ -164,23 +164,23 @@ class ConvexHullModel:
         # 4. Sort points based on polar angle
         sorted_points = sorted(other_points, key=cmp_to_key(compare))
         
-        # 5. Handle collinear points removal (keep only farthest)
-        # We iterate backwards and remove any point that is collinear with its *next* point
-        # (since the farthest one will be at the end of any collinear group)
-        final_sorted = []
-        i = 0
-        while i < len(sorted_points):
-            final_sorted.append(sorted_points[i])
-            j = i + 1
-            # Skip all collinear points
-            while j < len(sorted_points):
-                o, _ = self._orientation(self.pivot, sorted_points[i], sorted_points[j])
+        # 5. CRITICAL FIX: Reverse the last group of collinear points
+        # Find where the last collinear group starts
+        if len(sorted_points) > 1:
+            i = len(sorted_points) - 1
+            # Move backwards to find start of last collinear group
+            while i > 0:
+                o, _ = self._orientation(self.pivot, sorted_points[i-1], sorted_points[i])
                 if o != 0:
                     break
-                j += 1
-            i = j
+                i -= 1
+            
+            # Reverse the last collinear group so closest point comes last
+            if i < len(sorted_points) - 1:
+                sorted_points[i:] = sorted_points[i:][::-1]
 
-        return self.pivot, final_sorted
+        return self.pivot, sorted_points
+
 
     def run_graham_scan(self):
         """
@@ -203,14 +203,31 @@ class ConvexHullModel:
             'type': 'graham',
             'status': 'sorted',
             'pivot': pivot,
-            'sorted_points': [pivot] + sorted_points, # Show lines from pivot
+            'sorted_points': [pivot] + sorted_points,
             'stack': [],
             'check_idx': -1,
-            'description': f"Found pivot P: ({pivot['grid_x']},{pivot['grid_y']}).\nSorted all other points by polar angle."
+            'description': f"Found pivot P: ({pivot['grid_x']},{pivot['grid_y']}).\nSorted all other points by polar angle.\nReversed last collinear group."
         }
 
-        # --- Step 3: Main Algorithm ---
-        stack = [pivot, sorted_points[0], sorted_points[1]]
+        # --- Step 3: Main Algorithm with proper collinear handling ---
+        stack = [pivot, sorted_points[0]]
+        
+        # Special case: if only 2 points total
+        if len(sorted_points) == 1:
+            self.hull = stack
+            end_time = time.perf_counter()
+            self.h = len(self.hull)
+            self.time_taken_ms = (end_time - self.start_time) * 1000
+            yield {
+                'status': 'finished',
+                'hull_so_far': self.hull,
+                'time_ms': self.time_taken_ms,
+                'complexity': f"Graham Scan: O(n log n) = {self.n} * {math.log(self.n, 2):.1f} ops (for sorting)"
+            }
+            return
+        
+        # Start with second point
+        stack.append(sorted_points[1])
         
         # We start checking from the 3rd sorted point
         for i in range(2, len(sorted_points)):
@@ -228,25 +245,27 @@ class ConvexHullModel:
             }
 
             # --- Step 4: Pop from stack if not CCW ---
-            # stack[-2] = next-to-top, stack[-1] = top
-            o, val = self._orientation(stack[-2], stack[-1], current_point)
-            
-            
-            while o != 2: # While not counter-clockwise (i.e., clockwise or collinear)
-                popped = stack.pop()
-                
-                yield {
-                    'type': 'graham',
-                    'status': 'popping',
-                    'pivot': pivot,
-                    'sorted_points': [pivot] + sorted_points,
-                    'stack': stack,
-                    'check_point_id': current_point['id'],
-                    'description': f"({stack[-1]['grid_x']},{stack[-1]['grid_y']}) -> ({popped['grid_x']},{popped['grid_y']}) -> ({current_point['grid_x']},{current_point['grid_y']}) is a 'right turn'.\nPopping ({popped['grid_x']},{popped['grid_y']}) from stack."
-                }
-                
-                # Re-check with new stack top
+            # Keep popping while we have at least 2 points and turn is not counter-clockwise
+            while len(stack) > 1:
                 o, val = self._orientation(stack[-2], stack[-1], current_point)
+                
+                # CRITICAL: Pop if clockwise (o == 1) OR collinear (o == 0)
+                # We use <= 0 check to handle collinear points
+                if o != 2:  # Not counter-clockwise (either clockwise or collinear)
+                    popped = stack.pop()
+                    
+                    turn_type = "collinear" if o == 0 else "right turn"
+                    yield {
+                        'type': 'graham',
+                        'status': 'popping',
+                        'pivot': pivot,
+                        'sorted_points': [pivot] + sorted_points,
+                        'stack': stack,
+                        'check_point_id': current_point['id'],
+                        'description': f"({stack[-1]['grid_x'] if len(stack) > 0 else '?'},{stack[-1]['grid_y'] if len(stack) > 0 else '?'}) -> ({popped['grid_x']},{popped['grid_y']}) -> ({current_point['grid_x']},{current_point['grid_y']}) is {turn_type}.\nPopping ({popped['grid_x']},{popped['grid_y']}) from stack."
+                    }
+                else:
+                    break  # Counter-clockwise, stop popping
 
             # --- Step 5: Push to stack ---
             stack.append(current_point)
@@ -257,7 +276,7 @@ class ConvexHullModel:
                 'sorted_points': [pivot] + sorted_points,
                 'stack': stack,
                 'check_point_id': current_point['id'],
-                'description': f"({stack[-2]['grid_x']},{stack[-2]['grid_y']}) -> ({stack[-1]['grid_x']},{stack[-1]['grid_y']}) is a 'left turn'.\nPushing ({current_point['grid_x']},{current_point['grid_y']}) to stack."
+                'description': f"Left turn detected.\nPushing ({current_point['grid_x']},{current_point['grid_y']}) to stack."
             }
 
         # --- Algorithm Finished ---

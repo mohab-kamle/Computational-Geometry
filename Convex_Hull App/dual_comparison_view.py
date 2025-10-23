@@ -92,9 +92,9 @@ class DualComparisonView:
         """Setup the dual comparison interface."""
         self.main_frame = tk.Frame(self.root, bg=self.C_BLACK)
 
-        # Control Panel (Left) - Increased width slightly
+        # Control Panel (right) - Increased width slightly
         control_panel = tk.Frame(self.main_frame, bg=self.C_NEAR_BLACK, width=350, padx=16, pady=16)
-        control_panel.pack(side=tk.LEFT, fill=tk.Y)
+        control_panel.pack(side=tk.RIGHT, fill=tk.Y)
         control_panel.pack_propagate(False)
 
         # Title
@@ -668,31 +668,49 @@ class DualComparisonView:
         current_graham_state = None
 
         # Jarvis Step
+        jarvis_advanced = False
         if not self.jarvis_finished:
             try:
                 current_jarvis_state = next(self.jarvis_gen)
+                jarvis_advanced = True
                 self._process_single_state(self.canvas_left, current_jarvis_state, "Jarvis")
                 if current_jarvis_state.get('status') == 'finished':
                     self.jarvis_finished = True
                     self.final_jarvis_state = current_jarvis_state
+                    # Draw final Jarvis hull immediately when finished
+                    final_j_hull = self.final_jarvis_state.get('hull_so_far', [])
+                    self.draw_all(self.canvas_left, self.model_jarvis.get_points(), final_j_hull, clear=True)
             except StopIteration:
                 self.jarvis_finished = True
-                if not self.final_jarvis_state: self.final_jarvis_state = {'status': 'finished', 'hull_so_far': self.model_jarvis.get_hull(), 'time_ms': self.model_jarvis.time_taken_ms if hasattr(self.model_jarvis, 'time_taken_ms') else 0, 'complexity': 'N/A'}
+                if not self.final_jarvis_state: 
+                    self.final_jarvis_state = {'status': 'finished', 'hull_so_far': self.model_jarvis.get_hull(), 'time_ms': self.model_jarvis.time_taken_ms if hasattr(self.model_jarvis, 'time_taken_ms') else 0, 'complexity': 'N/A'}
+                # Draw final Jarvis hull immediately
+                final_j_hull = self.final_jarvis_state.get('hull_so_far', [])
+                self.draw_all(self.canvas_left, self.model_jarvis.get_points(), final_j_hull, clear=True)
             except Exception as e:
                 self.jarvis_finished = True; print(f"Jarvis Error: {e}")
                 if not self.final_jarvis_state: self.final_jarvis_state = {'status': 'error', 'hull_so_far': [], 'time_ms': 0, 'complexity': 'Error'}
 
         # Graham Step
+        graham_advanced = False
         if not self.graham_finished:
             try:
                 current_graham_state = next(self.graham_gen)
+                graham_advanced = True
                 self._process_single_state(self.canvas_right, current_graham_state, "Graham")
                 if current_graham_state.get('status') == 'finished':
                     self.graham_finished = True
                     self.final_graham_state = current_graham_state
+                    # Draw final Graham hull immediately when finished
+                    final_g_hull = self.final_graham_state.get('hull_so_far', [])
+                    self.draw_all(self.canvas_right, self.model_graham.get_points(), final_g_hull, clear=True)
             except StopIteration:
                 self.graham_finished = True
-                if not self.final_graham_state: self.final_graham_state = {'status': 'finished', 'hull_so_far': self.model_graham.get_hull(), 'time_ms': self.model_graham.time_taken_ms if hasattr(self.model_graham, 'time_taken_ms') else 0, 'complexity': 'N/A'}
+                if not self.final_graham_state: 
+                    self.final_graham_state = {'status': 'finished', 'hull_so_far': self.model_graham.get_hull(), 'time_ms': self.model_graham.time_taken_ms if hasattr(self.model_graham, 'time_taken_ms') else 0, 'complexity': 'N/A'}
+                # Draw final Graham hull immediately
+                final_g_hull = self.final_graham_state.get('hull_so_far', [])
+                self.draw_all(self.canvas_right, self.model_graham.get_points(), final_g_hull, clear=True)
             except Exception as e:
                 self.graham_finished = True; print(f"Graham Error: {e}")
                 if not self.final_graham_state: self.final_graham_state = {'status': 'error', 'hull_so_far': [], 'time_ms': 0, 'complexity': 'Error'}
@@ -703,28 +721,17 @@ class DualComparisonView:
         self.analysis_text_left.set(jarvis_desc)
         self.analysis_text_right.set(graham_desc)
 
-        # Check completion
+        # Check completion - but continue animation if either algorithm is still running
         if self.jarvis_finished and self.graham_finished:
             self.is_running = False
             self.status_text.set("Dual Comparison Finished!")
             self._set_button_states(start_state=tk.DISABLED, reset_state=tk.NORMAL,
                                     pause_text="Pause", pause_state=tk.DISABLED, next_state=tk.DISABLED)
 
-            # --- FIX: Explicitly redraw final states ---
-            if self.final_jarvis_state:
-                final_j_hull = self.final_jarvis_state.get('hull_so_far', [])
-                 # Ensure final draw uses outline_only=False
-                self.draw_all(self.canvas_left, self.model_jarvis.get_points(), final_j_hull, clear=True)
-            if self.final_graham_state:
-                final_g_hull = self.final_graham_state.get('hull_so_far', [])
-                 # Ensure final draw uses outline_only=False
-                self.draw_all(self.canvas_right, self.model_graham.get_points(), final_g_hull, clear=True)
-            # ------------------------------------------
-
+            # Final results display
             if self.final_jarvis_state and self.final_graham_state:
                 j_comp = self.final_jarvis_state.get('complexity', 'N/A')
                 g_comp = self.final_graham_state.get('complexity', 'N/A')
-                # Use get() with default 0 for time_ms
                 j_time_val = self.final_jarvis_state.get('time_ms', 0)
                 g_time_val = self.final_graham_state.get('time_ms', 0)
                 j_time = f"Jarvis: {j_time_val:.2f} ms ({j_comp})"
@@ -735,11 +742,10 @@ class DualComparisonView:
                 self.show_results()
                 self.hide_animation_controls()
 
-
             return # Stop animation loop
 
-        # Schedule next step ONLY if running and not paused
-        if self.is_running and not self.is_paused:
+        # Schedule next step if either algorithm is still running AND we're not paused
+        if self.is_running and not self.is_paused and (not self.jarvis_finished or not self.graham_finished):
             delay = int(self.speed_scale.get())
             self.animation_job = self.root.after(delay, self._animate_step)
 
@@ -759,6 +765,7 @@ class DualComparisonView:
 
         if state_type == 'jarvis':
             if status == 'finished':
+                # For final state, ensure we draw the complete hull (not outline_only)
                 self.draw_all(canvas, points, hull_so_far, clear=True)
             else:
                 p_idx, q_idx, check_idx = state.get('p_idx'), state.get('q_idx'), state.get('check_idx')
@@ -768,6 +775,7 @@ class DualComparisonView:
                 self.draw_jarvis_step(canvas, points, p, q, i, hull_so_far)
         elif state_type == 'graham':
             if status == 'finished':
+                # For final state, ensure we draw the complete hull (not outline_only)
                 self.draw_all(canvas, points, hull_so_far, clear=True)
             else:
                 pivot, sorted_pts, stack = state.get('pivot'), state.get('sorted_points', []), state.get('stack', [])
@@ -905,11 +913,13 @@ class DualComparisonView:
         self.hide_animation_controls(); self.hide_results()
         self.is_panning = False
         self.resize_canvases() # Resets origins and redraws empty state
-
+    
     def _go_back_to_main(self):
         self._reset_comparison()
-        if hasattr(self, 'main_frame') and self.main_frame.winfo_exists(): self.main_frame.pack_forget()
-        self.main_controller.show_main_app()
+        if hasattr(self, 'main_frame') and self.main_frame.winfo_exists():
+            self.main_frame.pack_forget()
+        self.main_controller.show_start_screen()
+
 
     def _set_button_states(self, start_state, reset_state, pause_text, pause_state, next_state):
         valid={tk.NORMAL, tk.DISABLED}; d=tk.DISABLED
