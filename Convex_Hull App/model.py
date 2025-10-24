@@ -152,7 +152,7 @@ class ConvexHullModel:
             o, _ = self._orientation(self.pivot, p1, p2)
             
             if o == 0: # Collinear
-                # Keep the farthest point (for now)
+                # Keep the farthest point
                 if self._distance_sq(self.pivot, p1) < self._distance_sq(self.pivot, p2):
                     return -1 # p2 is farther, so it comes "after" p1
                 else:
@@ -163,21 +163,6 @@ class ConvexHullModel:
 
         # 4. Sort points based on polar angle
         sorted_points = sorted(other_points, key=cmp_to_key(compare))
-        
-        # 5. CRITICAL FIX: Reverse the last group of collinear points
-        # Find where the last collinear group starts
-        if len(sorted_points) > 1:
-            i = len(sorted_points) - 1
-            # Move backwards to find start of last collinear group
-            while i > 0:
-                o, _ = self._orientation(self.pivot, sorted_points[i-1], sorted_points[i])
-                if o != 0:
-                    break
-                i -= 1
-            
-            # Reverse the last collinear group so closest point comes last
-            if i < len(sorted_points) - 1:
-                sorted_points[i:] = sorted_points[i:][::-1]
 
         return self.pivot, sorted_points
 
