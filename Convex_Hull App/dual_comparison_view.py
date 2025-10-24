@@ -115,8 +115,8 @@ class DualComparisonView:
         self.start_button = self._create_rounded_button(
             main_controls_frame, "Start Comparison",
             self._start_comparison,
-            bg=self.C_GREEN, fg=self.C_WHITE_TEXT,
-            bg_active=self.C_GREEN_ACTIVE, parent_bg=self.C_NEAR_BLACK
+            bg=self.C_BLUE, fg=self.C_WHITE_TEXT,
+            bg_active=self.C_BLUE_ACTIVE, parent_bg=self.C_NEAR_BLACK
         )
         self.start_button.pack(fill=tk.X, pady=(0, 5)) # Added padding between buttons
 
@@ -191,7 +191,7 @@ class DualComparisonView:
 
         # Right (Graham)
         tk.Label(dual_text_frame, text="Graham Scan:", font=self.FONT_NORMAL,
-                 fg=self.C_LINE_Q, bg=self.C_DARK_GRAY, anchor="w").pack(fill=tk.X)
+                 fg=self.C_BLUE, bg=self.C_DARK_GRAY, anchor="w").pack(fill=tk.X)
         self.analysis_text_right = tk.StringVar(value="Waiting...")
         tk.Label(dual_text_frame, textvariable=self.analysis_text_right, font=("Inter", 10), # Slightly larger font
                  fg=self.C_LIGHT_GRAY_TEXT, bg=self.C_DARK_GRAY, wraplength=260, justify=tk.LEFT,
@@ -224,7 +224,7 @@ class DualComparisonView:
 
         # Helper for vertically stacked result items
         def create_vertical_result(parent, title, var, accent=None):
-            accent = accent or self.C_GREEN_ACTIVE
+            accent = accent or self.C_BLUE_ACTIVE
             frame = tk.Frame(parent, bg=self.C_DARK_GRAY)
             frame.pack(fill=tk.X, pady=6)
 
@@ -259,7 +259,7 @@ class DualComparisonView:
         tk.Label(canvas_label_frame, text="Jarvis March (Gift Wrapping)", font=("Inter", 14, "bold"),
                  fg=self.C_POINT_P, bg=self.C_DARK_GRAY).pack(side=tk.LEFT, expand=True)
         tk.Label(canvas_label_frame, text="Graham Scan", font=("Inter", 14, "bold"),
-                 fg=self.C_LINE_Q, bg=self.C_DARK_GRAY).pack(side=tk.LEFT, expand=True)
+                 fg=self.C_BLUE, bg=self.C_DARK_GRAY).pack(side=tk.LEFT, expand=True)
 
         # Frame to hold the actual canvas elements side-by-side
         dual_canvas_frame = tk.Frame(self.canvas_container, bg=self.C_BLACK)
@@ -948,7 +948,7 @@ class DualComparisonView:
     def _update_button_text(self, button, text):
         if not isinstance(button, tk.Widget) or not isinstance(text, str): return
         if button==self.pause_resume_button or button==self.next_step_button: bg,abg = self.C_DARK_GRAY, self.C_MED_GRAY
-        elif button==self.start_button: bg,abg = self.C_GREEN, self.C_GREEN_ACTIVE
+        elif button==self.start_button: bg,abg = self.C_BLUE, self.C_BLUE_ACTIVE
         elif button==self.reset_button: bg,abg = self.C_DARK_GRAY, self.C_MED_GRAY
         elif button==self.back_button: bg,abg = self.C_MED_GRAY, self.C_DARK_GRAY
         else: bg,abg = self.C_MED_GRAY, self.C_DARK_GRAY

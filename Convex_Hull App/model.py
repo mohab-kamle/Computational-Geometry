@@ -44,13 +44,13 @@ class ConvexHullModel:
     @staticmethod
     def _orientation(p, q, r):
         # 0 -> Collinear
-        # 1 -> Clockwise
-        # 2 -> Counterclockwise
+        # 2 -> Clockwise (negative)
+        # 1 -> Counterclockwise (positive)
         val = (q['grid_x'] - p['grid_x']) * (r['grid_y'] - p['grid_y']) - \
               (q['grid_y'] - p['grid_y']) * (r['grid_x'] - p['grid_x'])
               
         if math.isclose(val, 0): return 0, val
-        return (1, val) if val > 0 else (2, val)
+        return (2, val) if val > 0 else (1, val)
 
     # --- Jarvis March Algorithm ---
     
@@ -90,8 +90,8 @@ class ConvexHullModel:
                 desc = (f"P: ({p['grid_x']},{p['grid_y']}), Q (best): ({q['grid_x']},{q['grid_y']}), I (test): ({r['grid_x']},{r['grid_y']})\n\n"
                         f"Checking orientation of (P, Q, I).\nResult: {val:.1f}\n\n")
 
-                if o == 2:  # Counter-clockwise
-                    desc += "Result is negative -> Counter-clockwise.\nI is 'more left' than Q. New Q = I."
+                if o == 1:  # Counter-clockwise
+                    desc += "Result is positive -> Counter-clockwise.\nI is 'more left' than Q. New Q = I."
                     q_idx = check_idx
                 elif o == 0:  # Collinear
                     desc += "Result is zero -> Collinear.\n"
@@ -103,7 +103,7 @@ class ConvexHullModel:
                     else:
                         desc += "Q is farther or equal. Q remains."
                 else: # Clockwise
-                    desc += "Result is positive -> Clockwise.\nQ remains the best candidate."
+                    desc += "Result is negative -> Clockwise.\nQ remains the best candidate."
                 
                 yield {
                     'type': 'jarvis',

@@ -13,6 +13,7 @@ class ConvexHullView:
     C_MED_GRAY = "#3c3c3e"
     C_LIGHT_GRAY_TEXT = "#a1a1a6"
     C_WHITE_TEXT = "#f5f5f7"
+    C_DARK_BLUE = "#000517"
     C_BLUE = "#0071e3"
     C_BLUE_ACTIVE = "#0077ed"
     C_GREEN = "#10b981"
@@ -97,11 +98,11 @@ class ConvexHullView:
     def set_button_states(self, start_state, reset_state, pause_text, pause_state, next_state, combo_state):
         self.start_button.config(state=start_state)
         self.reset_button.config(state=reset_state)
-        self.pause_resume_button.config(state=pause_state)
-        self.next_step_button.config(state=next_state)
+        # self.pause_resume_button.config(state=pause_state)
+        # self.next_step_button.config(state=next_state)
         self.algo_combobox.config(state=combo_state)
         
-        self._update_button_text(self.pause_resume_button, pause_text)
+        # self._update_button_text(self.pause_resume_button, pause_text)
 
     def show_main_app(self):
         self.start_frame.pack_forget()
@@ -248,29 +249,29 @@ class ConvexHullView:
         panel_width, panel_height = 750, 450
         panel_image = Image.new("RGBA", (panel_width, panel_height))
         self.panel_photo = ImageTk.PhotoImage(panel_image)
-        content_container = tk.Frame(self.start_frame, bg=self.C_BLACK)
-        content_container.config(border=100)
+        content_container = tk.Frame(self.start_frame, bg=self.C_DARK_BLUE)
+        content_container.config(border=70)
         content_container.place(relx=0.5, rely=0.5, anchor="center")
         
-        tk.Label(content_container, text="Convex Hull Algorithms", font=("Inter", 48, "bold"), fg=self.C_WHITE_TEXT, bg=self.C_BLACK).pack(pady=(20, 10), padx=50)
-        tk.Label(content_container, text="Visualizing Jarvis March and Graham Scan.", font=("Inter", 16), fg=self.C_LIGHT_GRAY_TEXT, bg=self.C_BLACK).pack(padx=50)
+        tk.Label(content_container, text="Convex Hull Algorithms", font=("Inter", 48, "bold"), fg=self.C_WHITE_TEXT, bg=self.C_DARK_BLUE).pack(pady=(20, 10), padx=50)
+        tk.Label(content_container, text="Visualizing Jarvis March and Graham Scan.", font=("Inter", 16), fg=self.C_LIGHT_GRAY_TEXT, bg=self.C_DARK_BLUE).pack(padx=50)
         
         description_text = (
             "Explore two classic algorithms for computing the convex hull of a finite set of points. "
             "Jarvis March ('gift wrapping') iteratively finds the next hull point, while Graham Scan "
             "sorts points by angle and uses a stack to build the hull."
         )
-        tk.Label(content_container, text=description_text, font=("Inter", 12), fg=self.C_LIGHT_GRAY_TEXT, bg=self.C_BLACK, wraplength=600, justify="center").pack(pady=40, padx=50)
+        tk.Label(content_container, text=description_text, font=("Inter", 12), fg=self.C_LIGHT_GRAY_TEXT, bg=self.C_DARK_BLUE, wraplength=600, justify="center").pack(pady=40, padx=50)
         
         # Single Algorithm Button
         #-- FIX: Pass 'command=None' so the internal handler can be assigned later
-        self.proceed_button = self._create_rounded_button(content_container, "Single Algorithm Mode", None, bg=self.C_BLUE, fg=self.C_WHITE_TEXT, bg_active=self.C_BLUE_ACTIVE, parent_bg=self.C_BLACK)
+        self.proceed_button = self._create_rounded_button(content_container, "Single Algorithm Mode", None, bg=self.C_BLUE, fg=self.C_WHITE_TEXT, bg_active=self.C_BLUE_ACTIVE, parent_bg=self.C_DARK_BLUE)
         self.proceed_button.pack(pady=(0, 15))
         self.proceed_button.config(state=tk.DISABLED)
         
         # Dual Comparison Button
         #-- FIX: Pass 'command=None' so the internal handler can be assigned later
-        self.dual_comparison_button = self._create_rounded_button(content_container, "Dual Comparison Mode", None, bg=self.C_GREEN, fg=self.C_WHITE_TEXT, bg_active=self.C_GREEN_ACTIVE, parent_bg=self.C_BLACK)
+        self.dual_comparison_button = self._create_rounded_button(content_container, "Dual Comparison Mode", None, bg=self.C_POINT_P, fg=self.C_WHITE_TEXT, bg_active=self.C_GREEN_ACTIVE, parent_bg=self.C_DARK_BLUE)
         self.dual_comparison_button.pack(pady=(0, 20))
         self.dual_comparison_button.config(state=tk.DISABLED)
 
@@ -281,7 +282,7 @@ class ConvexHullView:
         canvas_border_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 24))
         self.canvas = tk.Canvas(canvas_border_frame, bg=self.C_BLACK, highlightthickness=0, borderwidth=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
-        controls_panel = tk.Frame(content_frame, width=520, bg=self.C_NEAR_BLACK, padx=12, pady=12)
+        controls_panel = tk.Frame(content_frame, width=350, bg=self.C_NEAR_BLACK, padx=12, pady=12)
         controls_panel.pack(side=tk.RIGHT, fill=tk.Y)
         controls_panel.pack_propagate(False)
     # Back button at the very bottom
@@ -335,19 +336,20 @@ class ConvexHullView:
         buttons_row.pack(fill=tk.X, pady=(0, 12))
         
         self.start_button = self._create_rounded_button(buttons_row, "Start", lambda: self.start_button_command(), bg=self.C_BLUE, fg=self.C_WHITE_TEXT, bg_active=self.C_BLUE_ACTIVE, parent_bg=self.C_NEAR_BLACK)
-        self.start_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 6))
         self.reset_button = self._create_rounded_button(buttons_row, "Reset", lambda: self.reset_button_command(), bg=self.C_DARK_GRAY, fg=self.C_WHITE_TEXT, bg_active=self.C_MED_GRAY, parent_bg=self.C_NEAR_BLACK)
-        self.reset_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(6, 0))
-        
+        buttons_row.grid_columnconfigure((0, 1), weight=1)
+        self.start_button.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        self.reset_button.grid(row=0, column=1, sticky="ew", padx=(0, 6))
+
         tk.Frame(controls_panel, height=1, bg=self.C_MED_GRAY).pack(fill=tk.X, pady=10)
         self.anim_controls_frame = tk.Frame(controls_panel, bg=self.C_NEAR_BLACK)
-        tk.Label(self.anim_controls_frame, text="Animation", font=("Inter", 18, "bold"), fg=self.C_WHITE_TEXT, bg=self.C_NEAR_BLACK).pack(anchor="w", pady=(0, 15))
+        # tk.Label(self.anim_controls_frame, text="Animation", font=("Inter", 18, "bold"), fg=self.C_WHITE_TEXT, bg=self.C_NEAR_BLACK).pack(anchor="w", pady=(0, 15))
         buttons_frame = tk.Frame(self.anim_controls_frame, bg=self.C_NEAR_BLACK)
         buttons_frame.pack(fill=tk.X, pady=(0, 10))
-        self.pause_resume_button = self._create_rounded_button(buttons_frame, "Pause", lambda: self.pause_resume_command(), bg=self.C_DARK_GRAY, fg=self.C_WHITE_TEXT, bg_active=self.C_MED_GRAY, parent_bg=self.C_NEAR_BLACK)
-        self.pause_resume_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 5))
-        self.next_step_button = self._create_rounded_button(buttons_frame, "Next Step", lambda: self.next_step_command(), bg=self.C_DARK_GRAY, fg=self.C_WHITE_TEXT, bg_active=self.C_MED_GRAY, parent_bg=self.C_NEAR_BLACK)
-        self.next_step_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(5, 0))
+        # self.pause_resume_button = self._create_rounded_button(buttons_frame, "Pause", lambda: self.pause_resume_command(), bg=self.C_DARK_GRAY, fg=self.C_WHITE_TEXT, bg_active=self.C_MED_GRAY, parent_bg=self.C_NEAR_BLACK)
+        # self.pause_resume_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 5))
+        # self.next_step_button = self._create_rounded_button(buttons_frame, "Next Step", lambda: self.next_step_command(), bg=self.C_DARK_GRAY, fg=self.C_WHITE_TEXT, bg_active=self.C_MED_GRAY, parent_bg=self.C_NEAR_BLACK)
+        # self.next_step_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(5, 0))
         speed_frame = tk.Frame(self.anim_controls_frame, bg=self.C_NEAR_BLACK)
         speed_frame.pack(fill=tk.X, pady=(10, 0))
         tk.Label(speed_frame, text="Speed:", font=self.FONT_NORMAL, fg=self.C_LIGHT_GRAY_TEXT, bg=self.C_NEAR_BLACK).pack(side=tk.LEFT)
